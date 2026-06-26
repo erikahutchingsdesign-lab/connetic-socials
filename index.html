@@ -208,15 +208,17 @@ class Component extends DCLogic {
     const r = new FileReader();
     r.onload = e => {
       try{
-        const d = JSON.parse(e.target.result);
-        if(!d || !d.batches) throw new Error('not a valid backup file');
+        const d0 = JSON.parse(e.target.result);
+        if(!d0 || !d0.batches) throw new Error('not a valid backup file');
+        const d = this._normalize(d0);
         localStorage.setItem(SAVE_KEY, JSON.stringify(d));
         try{ Object.values(d.batches).forEach(b=>(b.posts||[]).forEach(p=>{ UID=Math.max(UID,(p.id||0)+1); })); }catch(_){}
         const y = d.lastYear || this.state.year, m = d.lastMonth || this.state.month;
         const b = d.batches[y+'-'+m]; const posts = (b && b.posts) || [];
         const n = Object.keys(d.batches).length;
         this.setState({ year:y, month:m, posts, savedAt:(b&&b.savedAt)||null, dirty:false, intakeOpen:!posts.length, sources:(b&&b.sources)||{} });
-        this.setStatus('\u2713 Backup imported \u2014 '+n+' batch'+(n===1?'':'es')+' restored. Showing '+this.periodLabel(y,m)+'.');
+        this._cloudPush();
+        this.setStatus('\u2713 Backup imported \u2014 '+n+' batch'+(n===1?'':'es')+' restored & synced to the shared cloud. Showing '+this.periodLabel(y,m)+'.');
       }catch(err){ this.setStatus('Import failed \u2014 '+err.message); }
     };
     r.readAsText(file);
